@@ -91,7 +91,7 @@ WGBSage <- function(x, model=c("horvath","horvathshrunk","hannum","skinandblood"
     keptSamples <- setdiff(colnames(x), droppedSamples)
     thresh2 <- ceiling(ncol(x) / 2)
     droppedRegions <- names(which(rowSums(is.na(methWGBSage)) >= thresh2))
-    keptRegions <- setdiff(names(clock$gr), droppedRegions)
+    keptRegions <- setdiff(as.character(clock$gr), droppedRegions)
     methWGBSage <- methWGBSage[keptRegions, keptSamples] 
   }
   

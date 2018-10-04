@@ -154,11 +154,8 @@ setMethod("show", "CpGindex",
   y <- sort(subsetByOverlaps(y, x))
   z <- sort(subsetByOverlaps(z, y))
   res <- getMeth(subsetByOverlaps(x,y), regions=z, type="raw", what="perRegion")
-  if (any(is.na(res)) | any(is.nan(res))) {
-    return(.delayedNoNaN(res, z)) # slower but exact 
-  } else { 
-    return(res %*% width(z)/sum(width(z))) # much faster
-  }
+  
+  return(.delayedNoNaN(res, z)) # slower but exact
 }
 
 # helper fn

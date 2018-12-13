@@ -12,19 +12,40 @@
 #' @seealso makeBSseq_HDF5
 #'
 #' @export 
-makeBSseq <- function(tbl, params, simplify=FALSE) {
+makeBSseq <- function(tbl, params, hdf5=FALSE, simplify=FALSE) {
 
   gr <- resize(makeGRangesFromDataFrame(tbl[, 1:3]), 1) 
   if (params$how == "data.table") { 
-    betas <- match(params$betaCols, names(tbl))
-    covgs <- match(params$covgCols, names(tbl))
-    M <- fixNAs(round(tbl[, ..betas] * tbl[, ..covgs]), y=0, params$sparse)
-    Cov <- fixNAs(tbl[, ..covgs], y=0, params$sparse)
+    betaIdx <- match(params$betaCols, names(tbl))
+    covgIdx <- match(params$covgCols, names(tbl))
+    M <- as.matrix(tbl[, ..betaIdx])
+    Cov <- as.matrix(tbl[, ..covgIdx])
   } else { 
-    M <- with(params, fixNAs(round(tbl[,betaCols]*tbl[,covgCols]), y=0, sparse))
-    Cov <- with(params, fixNAs(tbl[, covgCols], y=0, sparse)) 
+    M <- as.matrix(tbl[,betaCols])
+    Cov <- as.matrix(tbl[, covgCols])
   }
-  res <- BSseq(gr=gr, M=M, Cov=Cov, pData=params$pData, rmZeroCov=TRUE) 
+  
+  if(!params$sparse) {
+    loci_without_zero_cov <- rowSums(Cov == 0) == 0
+    
+    M <- M[loci_without_zero_cov, ]
+    Cov <- Cov[loci_without_zero_cov, ]
+    gr <- gr[loci_without_zero_cov]
+  } else {
+    M[is.na(M)] <- 0
+  }
+  
+  colnames(M) <- NULL
+  colnames(Cov) <- NULL
+  
+  if(hdf5) {
+    hdf5M <- writeHDF5Array(M)
+    hdf5Cov <- writeHDF5Array(Cov)
+    res <- BSseq(gr=gr, M=hdf5M, Cov=hdf5Cov, sampleNames=rownames(params$pData))
+  } else {
+    res <- BSseq(gr=gr, M=M, Cov=Cov, sampleNames=rownames(params$pData)) 
+  }
+  
   if (simplify) res <- simplifySampleNames(res)
   return(res)
 
